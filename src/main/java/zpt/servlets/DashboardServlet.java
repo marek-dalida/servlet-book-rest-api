@@ -64,6 +64,7 @@ public class DashboardServlet extends HttpServlet {
 
         } catch (Exception e) {
             ExceptionResponse exceptionResponse = new ExceptionResponse(e.getMessage(), 400);
+            resp.setStatus(400);
             gson.toJson(exceptionResponse, resp.getWriter());
         }
     }
@@ -99,13 +100,14 @@ public class DashboardServlet extends HttpServlet {
         ServletContext context = getServletContext();
 
         ArrayList<Book> books;
-        books = (ArrayList<Book>) context.getAttribute("books");
-
-        Book newBook = gson.fromJson(request.getReader(), Book.class);
-
-        User user = (User) session.getAttribute("user");
 
         try {
+            books = (ArrayList<Book>) context.getAttribute("books");
+
+            Book newBook = gson.fromJson(request.getReader(), Book.class);
+
+            User user = (User) session.getAttribute("user");
+
             if (user != null && user.getRole() != Role.ADMIN) {
                 throw new Exception("User doesn't have permission to this operation");
             }
@@ -119,7 +121,8 @@ public class DashboardServlet extends HttpServlet {
             gson.toJson(newBook, response.getWriter());
 
         } catch (Exception e){
-            ExceptionResponse exceptionResponse = new ExceptionResponse(e.getMessage(), 400);
+            ExceptionResponse exceptionResponse = new ExceptionResponse(e.getMessage(), 403);
+            response.setStatus(403);
             gson.toJson(exceptionResponse, response.getWriter());
         }
 

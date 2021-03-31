@@ -11,7 +11,6 @@ import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Base64;
 import java.util.HashMap;
 
@@ -34,12 +33,13 @@ public class LoginServlet extends HttpServlet {
         response.setContentType("application/json");
         response.setCharacterEncoding("utf-8");
         HttpSession session = request.getSession();
-        PrintWriter out = response.getWriter();
         Gson gson = new Gson();
-        LoginRequest loginRequest = gson.fromJson(request.getReader(), LoginRequest.class);
 
-        User user;
         try {
+            LoginRequest loginRequest = gson.fromJson(request.getReader(), LoginRequest.class);
+
+            User user;
+
             if (loginRequest.getUsername().equals("admin") && loginRequest.getPassword().equals("admin")) {
                 user = new User(loginRequest.getUsername(), loginRequest.getPassword(), Role.ADMIN);
                 session.setAttribute("user", user);
@@ -72,11 +72,6 @@ public class LoginServlet extends HttpServlet {
     }
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        response.setContentType("application/json");
-        response.setCharacterEncoding("utf-8");
-        PrintWriter out = response.getWriter();
-        out.print("Login Servlet");
-        out.close();
     }
 
     private String getBase64FromString(String str) {
