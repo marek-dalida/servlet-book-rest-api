@@ -3,6 +3,7 @@ package zpt.servlets;
 import com.google.gson.Gson;
 import zpt.models.Book;
 import zpt.models.User;
+import zpt.responses.ExceptionResponse;
 import zpt.responses.GetDashboardResponse;
 import zpt.responses.Response;
 
@@ -15,7 +16,7 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collections;
 
-@WebServlet(name = "DashboardServlet", value = "/DashboardServlet")
+@WebServlet(name = "DashboardServlet", value = "/dashboard/*")
 public class DashboardServlet extends HttpServlet {
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -24,9 +25,38 @@ public class DashboardServlet extends HttpServlet {
         resp.setContentType("application/json");
         resp.setCharacterEncoding("utf-8");
 
+        String pathInfo = req.getPathInfo();
+        String[] pathParts = pathInfo.split("/");
+
+        int deleteBookId = 0;
+        try {
+            deleteBookId = Integer.parseInt(pathParts[1]);
+        } catch (NumberFormatException e) {
+            System.out.println(e.getMessage());
+        }
+
+        ServletContext context = getServletContext();
+
+        ArrayList<Book> books;
+        books = (ArrayList<Book>) context.getAttribute("books");
+
+        int finalDeleteBookId = deleteBookId;
+        Book deletedBook = books.stream()
+                .filter(book -> book.getId() == finalDeleteBookId)
+                .findAny()
+                .orElse(null);
+        books.removeIf(book -> book.getId() == finalDeleteBookId);
+        context.setAttribute("books", books);
+
+
         Gson gson = new Gson();
-        Response response = new Response("delete huje muje", 200);
-        gson.toJson(response, resp.getWriter());
+
+        if (deletedBook == null) {
+            String msg = "Book with given id: " + pathParts[1] + " not found";
+            Response objectNotFound = new Response(msg, 404);
+            gson.toJson(objectNotFound, resp.getWriter());
+        } else
+            gson.toJson(deletedBook, resp.getWriter());
     }
 
     @Override
@@ -34,20 +64,21 @@ public class DashboardServlet extends HttpServlet {
         response.setContentType("application/json");
         response.setCharacterEncoding("utf-8");
         Gson gson = new Gson();
-
         ServletContext context = getServletContext();
 
-        ArrayList<Book> books;
-        books = (ArrayList<Book>) context.getAttribute("books");
-
-        GetDashboardResponse res = new GetDashboardResponse(books, 200);
-
-
-        gson.toJson(res, response.getWriter());
-
-//        PrintWriter out = response.getWriter();
-//        out.print("Dashboard Servlet");
-//        out.close();
+        try {
+            ArrayList<Book> books;
+            books = (ArrayList<Book>) context.getAttribute("books");
+            GetDashboardResponse res = new GetDashboardResponse(books, 200);
+            gson.toJson(res, response.getWriter());
+        }
+        catch(Exception ex){
+            ExceptionResponse exResponse = new ExceptionResponse();
+            exResponse.setMessage(ex.getLocalizedMessage());
+            exResponse.setStatus(500);
+            response.setStatus(500);
+            gson.toJson(exResponse, response.getWriter());
+        }
     }
 
     @Override
@@ -63,7 +94,7 @@ public class DashboardServlet extends HttpServlet {
         Book newBook = gson.fromJson(request.getReader(), Book.class);
 
         Book maxBook = Collections.max(books);
-        int newBookId = maxBook.getId() +1;
+        int newBookId = maxBook.getId() + 1;
         newBook.setId(newBookId);
 
         books.add(newBook);
