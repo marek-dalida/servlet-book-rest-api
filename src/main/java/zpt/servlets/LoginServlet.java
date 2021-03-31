@@ -7,7 +7,6 @@ import zpt.models.Role;
 import zpt.models.User;
 import zpt.responses.ExceptionResponse;
 
-import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.*;
@@ -39,30 +38,23 @@ public class LoginServlet extends HttpServlet {
         Gson gson = new Gson();
         LoginRequest loginRequest = gson.fromJson(request.getReader(), LoginRequest.class);
 
-
+        User user;
         try {
             if (loginRequest.getUsername().equals("admin") && loginRequest.getPassword().equals("admin")) {
-                User user = new User(loginRequest.getUsername(), loginRequest.getPassword(), Role.ADMIN);
+                user = new User(loginRequest.getUsername(), loginRequest.getPassword(), Role.ADMIN);
                 session.setAttribute("user", user);
             } else if (users.containsKey(loginRequest.getUsername())) {
                 if (users.get(loginRequest.getUsername()).equals(loginRequest.getPassword())) {
-                    User user = new User(loginRequest.getUsername(), loginRequest.getPassword(), Role.USER);
+                    user = new User(loginRequest.getUsername(), loginRequest.getPassword(), Role.USER);
                     session.setAttribute("user", user);
                 } else {
                     throw new Exception("user " + loginRequest.getUsername() + " , " + loginRequest.getPassword()
                             + " has different login and password");
                 }
+            } else {
+                throw new Exception("given user login  " + loginRequest.getUsername() + " , " + loginRequest.getPassword()
+                        + " doesn't exist in database");
             }
-            String username = request.getParameter("username");
-            String password = request.getParameter("password");
-
-            User user = new User(username, password);
-
-            if (!password.isEmpty() && !username.isEmpty()) {
-                session.setAttribute("user", user);
-            }
-
-            session.setAttribute("user", user);
 
             String userIdBase64 = getBase64FromString(user.getLogin());
             response.addCookie(new Cookie("userId", userIdBase64));
@@ -72,8 +64,8 @@ public class LoginServlet extends HttpServlet {
         catch (Exception e){
             ExceptionResponse exResponse = new ExceptionResponse();
             exResponse.setMessage(e.getMessage());
-            exResponse.setStatus(500);
-            response.setStatus(500);
+            exResponse.setStatus(400);
+            response.setStatus(400);
             gson.toJson(exResponse, response.getWriter());
         }
 
