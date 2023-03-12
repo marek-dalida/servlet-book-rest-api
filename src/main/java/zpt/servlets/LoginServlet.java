@@ -6,6 +6,7 @@ import zpt.models.LoginRequest;
 import zpt.models.Role;
 import zpt.models.User;
 import zpt.responses.ExceptionResponse;
+import zpt.responses.Response;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -59,7 +60,9 @@ public class LoginServlet extends HttpServlet {
             String userIdBase64 = getBase64FromString(user.getLogin());
             response.addCookie(new Cookie("userId", userIdBase64));
 
-            gson.toJson(user, response.getWriter());
+            Response responseLogin = new Response("You were successfully logged as: " + user.getLogin() , 200);
+            response.setStatus(200);
+            gson.toJson(responseLogin, response.getWriter());
         }
         catch (Exception e){
             ExceptionResponse exResponse = new ExceptionResponse();
@@ -68,7 +71,6 @@ public class LoginServlet extends HttpServlet {
             response.setStatus(400);
             gson.toJson(exResponse, response.getWriter());
         }
-
     }
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
